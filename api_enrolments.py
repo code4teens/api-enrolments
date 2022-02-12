@@ -1,4 +1,5 @@
 from flask import Blueprint, jsonify, request
+from sqlalchemy import exc
 
 from database import db_session
 from models import Cohort, Enrolment, User
@@ -78,3 +79,101 @@ def create_enrolment():
         }
 
         return data, 400
+
+
+@api_enrolments.route('/enrolments/<int:id>')
+def get_enrolment(id):
+    enrolment = Enrolment.query.filter_by(id=id).one_or_none()
+
+    if enrolment is not None:
+        data = EnrolmentSchema().dump(enrolment)
+
+        return data, 200
+    else:
+        data = {
+            'title': 'Not Found',
+            'status': 404,
+            'detail': f'Enrolment {id} not found'
+        }
+
+        return data, 404
+
+
+@api_enrolments.route('/enrolments/<int:id>', methods=['PUT'])
+def update_enrolment(id):
+    keys = ['user_id', 'cohort_id']
+
+    if all(key in keys for key in request.json):
+        existing_enrolment = Enrolment.query.filter_by(id=id).one_or_none()
+
+        if existing_enrolment is not None:
+            enrolment_schema = EnrolmentSchema()
+
+            try:
+                enrolment = enrolment_schema.load(request.json)
+            except Exception as _:
+                data = {
+                    'title': 'Bad Request',
+                    'status': 400,
+                    'detail': 'Some values failed validation'
+                }
+
+                return data, 400
+            else:
+                enrolment.id = existing_enrolment.id
+                db_session.merge(enrolment)
+
+                try:
+                    db_session.commit()
+                except exc.IntegrityError as _:
+                    data = {
+                        'title': 'Bad Request',
+                        'status': 400,
+                        'detail': 'Some values failed validation'
+                    }
+
+                    return data, 400
+                else:
+                    data = enrolment_schema.dump(existing_enrolment)
+
+                    return data, 200
+        else:
+            data = {
+                'title': 'Not Found',
+                'status': 404,
+                'detail': f'Enrolment {id} not found'
+            }
+
+            return data, 404
+    else:
+        data = {
+            'title': 'Bad Request',
+            'status': 400,
+            'detail': 'Missing some keys or contains extra keys'
+        }
+
+        return data, 400
+
+
+@api_enrolments.route('/enrolments/<int:id>', methods=['DELETE'])
+def delete_enrolment(id):
+    enrolment = Enrolment.query.filter_by(id=id).one_or_none()
+
+    if enrolment is not None:
+        db_session.delete(enrolment)
+        db_session.commit()
+        data = {
+            'title': 'OK',
+            'status': 200,
+            'detail': f'Enrolment {id} deleted'
+        }
+
+        return data, 200
+    else:
+        data = {
+            'title': 'Not Found',
+            'status': 404,
+            'detail': f'Enrolment {id} not found'
+        }
+
+        return data, 404
