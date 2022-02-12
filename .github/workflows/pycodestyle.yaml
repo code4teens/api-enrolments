@@ -1,0 +1,31 @@
+name: pycodestyle
+
+on:
+  push:
+    paths:
+      - '**.py'
+    branches:
+      - '**'
+
+  pull_request:
+    paths:
+      - '**.py'
+    branches:
+      - '**'
+
+jobs:
+  pycodestyle:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2.3.1
+        with:
+          python-version: '3.9'
+
+      - run: python3 -m pip install -U pip
+      
+      - run: python3 -m pip install -U pycodestyle
+      
+      - run: pycodestyle *.py
