@@ -42,5 +42,5 @@ class User(Base):
 class Cohort(Base):
     __tablename__ = 'cohort'
     id = Column(SmallInteger, primary_key=True, autoincrement=True)
-    name = Column(String(32), nullable=False)
+    name = Column(String(64), nullable=False)
     nickname = Column(String(16), nullable=False)
